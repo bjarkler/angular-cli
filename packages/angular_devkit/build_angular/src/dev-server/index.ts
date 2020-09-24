@@ -397,10 +397,23 @@ export function buildServerConfig(
   const servePath = buildServePath(serverOptions, browserOptions, logger);
   const { styles, scripts } = normalizeOptimization(browserOptions.optimization);
 
-  const config: WebpackDevServer.Configuration & { logLevel: string } = {
+  const headers: {[key: string]: string} = {
+    'Access-Control-Allow-Origin': '*',
+  };
+
+  if (styles || scripts) {
+    // TODO: Find better way to enable this only in production
+    headers['Content-Security-Policy'] =
+        'trusted-types angular; require-trusted-types-for \'script\';';
+  } else {
+    headers['Content-Security-Policy-Report-Only'] =
+        'trusted-types angular angular#only-for-development goog#html; require-trusted-types-for \'script\';';
+  }
+
+  const config: WebpackDevServer.Configuration&{logLevel: string} = {
     host: serverOptions.host,
     port: serverOptions.port,
-    headers: { 'Access-Control-Allow-Origin': '*' },
+    headers,
     historyApiFallback: !!browserOptions.index && {
       index: `${servePath}/${getIndexOutputFile(browserOptions)}`,
       disableDotRule: true,
